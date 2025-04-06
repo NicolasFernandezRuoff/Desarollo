@@ -1,0 +1,21 @@
+body {
+    margin: 0;
+    background-color: #f9f9f9;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  h1 {
+    color: #FF385C;
+    font-size: 3rem;
+  }
+
+h1:hover {
+  color: #2f7ece;
+  text-decoration: underline;
+  text-shadow: 0 0 10px rgba(59, 156, 255, 0.5);
+}
+  
