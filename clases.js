@@ -15,19 +15,20 @@ class Alojamiento {
         this.fotos = []
     }
 
-    estasDisponibleEn(rangoDeFechas){
-
+    estasDisponibleEn(consultaRangoDeFechas){
+        return this.rangoDeFechas == consultaRangoDeFechas
     }
-    tuPrecioEstaDentroDe(valorMinimo, valorMaximo){
 
+    tuPrecioEstaDentroDe(valorMinimo, valorMaximo){
+        return this.precioPorNoche >= valorMinimo && this.precioPorNoche <= valorMaximo
     }
 
     tenesCaracteristica(caracteristica){
-
+        return this.caracteristicas.includes(caracteristica)
     }
 
     puedenAlojarse(cantHuespedes){
-
+        return this.cantHuespedesMax > cantHuespedes
     }
 }
 
@@ -63,13 +64,14 @@ class Reserva {
         this.cantHuespedes = cantHuespedes
         this.alojamiento = alojamiento
         this.rangoDeFechas = rangoDeFechas
-        this.estado = estadoReserva
+        this.Estado = estadoReserva
         this.precioPorNoche = precioPorNoche
     }
 
     actualizarEstado(estadoReserva){
         this.estado = estadoReserva
     }
+
 }
 
 class Ciudad {
@@ -95,13 +97,21 @@ class Notificacion {
     }
 
     marcarComoLeida(){
-
+        this.leida = true
     }
 }
 
 class FactoryNotificacion{
     crearSegunReserva(reserva){
-
+        const fechaHoy = new Date();
+        switch(reserva.estado){
+            case Estado.PENDIENTE:
+                return notificacionReserva = new Notificacion("se ha realizado una nueva reserva", reserva.huespedReservador, fechaHoy, false, ) //revisar parametros (faltan cosas)
+            case Estado.CONFIRMADA:
+                return notificacionReserva = new Notificacion("se ha confirmado una reserva", reserva.huespedReservador, fechaHoy, false, )
+            case Estado.CANCELADA:
+                return notificacionReserva = new Notificacion("se ha cancelado una reserva", reserva.huespedReservador, fechaHoy, false, )
+        }
     }
 }
 
@@ -122,7 +132,7 @@ const Caracteristica  = Object.freeze({
     MASCOTAS_PERMITIDAS: 'mascotasPermitidas'
 });
 
-const estadoReserva = Object.freeze({
+const Estado = Object.freeze({
     PENDIENTE: 'pendiente',
     CONFIRMADA: 'confirmada',
     CANCELADA: 'cancelada'
