@@ -16,7 +16,9 @@ class Alojamiento {
     }
 
     estasDisponibleEn(consultaRangoDeFechas){
-        return this.rangoDeFechas == consultaRangoDeFechas
+        return !this.reservas.some(reserva => 
+            reserva.rangoDeFechas.esElMismoRango(reserva.rangoDeFechas, consultaRangoDeFechas)
+        );
     }
 
     tuPrecioEstaDentroDe(valorMinimo, valorMaximo){
@@ -38,6 +40,18 @@ class Usuario {
         this.email = email
         this.tipo = tipo
     }
+
+    gestionarReserva(accion, reserva){
+        switch(accion){
+            case 'reservar':
+                reserva.actualizarEstado(PENDIENTE)
+            case 'aceptar':
+                reserva.actualizarEstado(CONFIRMADA)
+            case 'cancelar':
+                reserva.actualizarEstado(CANCELADA)
+        }   
+    }
+    
 }
 
 class Foto {
@@ -57,6 +71,16 @@ class Direccion {
     }
 }
 
+class CambioEstadoReserva {
+    constructor(fechaCambio, estadoACambiar, reserva, motivo, usuarioCambiador){
+        this.fechaCambio = fechaCambio
+        this.estadoACambiar = estadoACambiar
+        this.reserva = reserva
+        this.motivo = motivo
+        this.usuarioCambiador = usuarioCambiador
+    }
+}
+
 class Reserva {
     constructor(fechaAlta, huespedReservador, cantHuespedes, alojamiento, rangoDeFechas, estadoReserva, precioPorNoche){
         this.fechaAlta = fechaAlta
@@ -68,10 +92,22 @@ class Reserva {
         this.precioPorNoche = precioPorNoche
     }
 
-    actualizarEstado(estadoReserva){
-        this.estado = estadoReserva
+    actualizarEstado(estadoReserva, responsableDelCambio){
+        const fechaHoy = new Date();
+        const cambioReserva = new CambioEstadoReserva(fechaHoy, responsableDelCambio, estadoReserva,  )
     }
 
+}
+
+class RangoFechas{
+    constructor(fechaInicio, fechaFin){
+        this.fechaInicio = fechaInicio
+        this.fechaFin = fechaFin
+    }
+
+    esElMismoRango(rango1, rango2){
+        return rango1.fechaInicio == rango2.fechaInicio && rango1.fechaFin == rango2.fechaFin
+    }
 }
 
 class Ciudad {
@@ -106,7 +142,7 @@ class FactoryNotificacion{
         const fechaHoy = new Date();
         switch(reserva.estado){
             case Estado.PENDIENTE:
-                return notificacionReserva = new Notificacion("se ha realizado una nueva reserva", reserva.huespedReservador, fechaHoy, false, ) //revisar parametros (faltan cosas)
+                return notificacionReserva = new Notificacion("se ha realizado una nueva reserva en el alojamiento ${reserva.alojamiento", reserva.huespedReservador, fechaHoy, false, ) //revisar parametros (faltan cosas)
             case Estado.CONFIRMADA:
                 return notificacionReserva = new Notificacion("se ha confirmado una reserva", reserva.huespedReservador, fechaHoy, false, )
             case Estado.CANCELADA:
