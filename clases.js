@@ -34,24 +34,39 @@ class Alojamiento {
     }
 }
 
-class Usuario {
+class Persona{
     constructor(nombre, email, tipo){
         this.nombreUsuario = nombre
         this.email = email
         this.tipo = tipo
     }
+}
 
-    gestionarReserva(accion, reserva){
-        switch(accion){
-            case 'reservar':
-                reserva.actualizarEstado(PENDIENTE)
-            case 'aceptar':
-                reserva.actualizarEstado(CONFIRMADA)
-            case 'cancelar':
-                reserva.actualizarEstado(CANCELADA)
-        }   
+class Huesped extends Persona{
+    constructor(nombre, email){
+        super(nombre, email, 'huesped')
     }
-    
+
+realizarReserva(alojamiento, fechaInicio, fechaFinal, cantHuespedes){
+    const rangoFechas = new RangoFechas(fechaInicio, fechaFinal)
+    const fechaHoy = new Date()
+    const nuevaReserva = new Reserva(fechaHoy, this, cantHuespedes, alojamiento, rangoFechas, null, null) // revisar
+    reserva.actualizarEstado(PENDIENTE, this, `El huesped ${this.nombre} solicito hacer una reserva`) 
+}
+// repeticion de logica?
+cancelarReserva(reserva, motivo){
+    reserva.actualizarEstado(PENDIENTE, this, motivo)
+}  
+}
+
+class Anfitrion extends Persona{
+    constructor(nombre, email){
+        super(nombre, email, 'anfitrion')
+    }
+
+    confirmarReserva(reserva){
+        reserva.actualizarEstado(CONFIRMADA, this, `La reserva fue confirmada por el anfitrion`)
+    }
 }
 
 class Foto {
@@ -92,9 +107,9 @@ class Reserva {
         this.precioPorNoche = precioPorNoche
     }
 
-    actualizarEstado(estadoReserva, responsableDelCambio){
-        const fechaHoy = new Date();
-        const cambioReserva = new CambioEstadoReserva(fechaHoy, responsableDelCambio, estadoReserva,  )
+    actualizarEstado(estadoReserva, responsableDelCambio, motivo){
+        const fechaHoy = new Date()
+        const cambioReserva = new CambioEstadoReserva(fechaHoy, estadoReserva,  motivo, responsableDelCambio)
     }
 
 }
@@ -142,7 +157,7 @@ class FactoryNotificacion{
         const fechaHoy = new Date();
         switch(reserva.estado){
             case Estado.PENDIENTE:
-                return notificacionReserva = new Notificacion("se ha realizado una nueva reserva en el alojamiento ${reserva.alojamiento", reserva.huespedReservador, fechaHoy, false, ) //revisar parametros (faltan cosas)
+                return notificacionReserva = new Notificacion("se ha realizado una nueva reserva ", reserva.huespedReservador, fechaHoy, false, ) //revisar parametros (faltan cosas)
             case Estado.CONFIRMADA:
                 return notificacionReserva = new Notificacion("se ha confirmado una reserva", reserva.huespedReservador, fechaHoy, false, )
             case Estado.CANCELADA:
@@ -153,7 +168,7 @@ class FactoryNotificacion{
 
 const TipoUsuario  = Object.freeze({
     HUESPED: 'huesped',
-    ANFITRION: 'verde'
+    ANFITRION: 'anfitrion'
 });
 
 const Moneda  = Object.freeze({
