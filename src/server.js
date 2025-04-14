@@ -9,9 +9,11 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
+
 app.get('/health', (req, res) => {
   console.log('Se accedió a /health');
   res.status(200).json({ status: 'ok', message: 'El sistema está funcionando correctamente' });
+  // se puede poner sin el status(200)
 });
 
 

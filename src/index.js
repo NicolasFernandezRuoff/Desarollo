@@ -44,24 +44,27 @@ class Alojamiento {
     get reservas() { return this.#reservas; }
     get fotos() { return this.#fotos; }
 
+
+
     estaDisponibleEn(rangoDeFechas) {
-        // TODO
-        return true;
+        return this.#reservas
+            .filter(reserva => reserva.estado === EstadoReserva.CONFIRMADA)
+            .every(reserva =>
+                rangoDeFechas.fechaFin <= reserva.fechaInicio() ||
+                rangoDeFechas.fechaInicio >= reserva.fechaFin()
+            );
     }
-
     tuPrecioEstaDentroDe(valorMinimo, valorMaximo) {
-        // TODO
-        return true;
+        return this.#precioPorNoche >= valorMinimo && this.#precioPorNoche <= valorMaximo;
     }
 
-    tenesCaracteriristicas(caracteristicas) {
-        // TODO
-        return true;
+    tenesCaracteriristicas(Caracteristica) {
+        // .some() verifica si al menos un elemento del array cumple una condición.
+        return this.#caracteristicas.some(caracteristica => caracteristica === Caracteristica);
     }
 
     puedenAlojarse(cantHuespedes) {
-        // TODO
-        return true;
+        return this.#cantHuespedesMax >= cantHuespedes;
     }
 
     agregarReserva(reserva) {
@@ -69,7 +72,7 @@ class Alojamiento {
     }
     
     eliminarReserva(reserva) {
-        this.#reservas = this.#reservas.filter(r => r !== reserva);
+        this.#reservas = this.#reservas.filter(reser => reser !== reserva);
     }
     
 }
@@ -181,6 +184,30 @@ class Reserva {
     get estado() { return this.#estado; }
     get precioPorNoche() { return this.#precioPorNoche; }
 
+
+    fechaInicio(){
+        return this.#rangoFechas.fechaInicio;
+    }
+
+    fechaFin(){
+        return this.#rangoFechas.fechaFin;
+    }
+
+    anfitrionDelLugar() {
+        return this.#alojamiento.anfitrion;
+    }
+
+    estaDispobleElAlojamiento(){
+        //Para chequear
+        console.log("Disponible en fechas:", this.alojamiento.estaDisponibleEn(this.rangoFechas));
+        console.log("Fecha Inicial:", this.#rangoFechas.fechaInicio);
+        console.log("Fecha Final:", this.#rangoFechas.fechaFin);
+        console.log("Capacidad suficiente:", this.alojamiento.puedenAlojarse(this.cantHuespedes));
+
+        return this.#alojamiento.estaDisponibleEn(this.#rangoFechas) &&
+               this.#alojamiento.puedenAlojarse(this.#cantHuespedes);
+    }
+
     actualizarEstado(nuevoEstado) {
         this.#estado = nuevoEstado;
         //TODO Seguramente hay mas cosas para hacer 
@@ -257,6 +284,10 @@ class Notificacion {
         this.#leida = true;
         this.#fechaLeida = new Date();
     }
+
+    enviarAlUsuario(usuario) {
+        usuario.recibirNotificacion(this);
+    }
 }
 
 // Clase Usuario
@@ -264,90 +295,65 @@ class Usuario {
     #nombre;
     #email;
     #tipo;
+    #notificaciones;
 
     constructor(nombre, email, tipo) {
         this.#nombre = nombre;
         this.#email = email;
         this.#tipo = tipo;
+        this.#notificaciones = [];
     }
 
     get nombre() { return this.#nombre; }
     get email() { return this.#email; }
     get tipo() { return this.#tipo; }
+    get notificaciones() { return this.#notificaciones; }
 
-    recibirNotificacion(notificacion) { //Noc como hacer para que le llegue solo al anfitrion
-        // TODO Anda a saber que hay que hacer aca se deja en blanco :)
+    recibirNotificacion(notificacion) {
+        this.#notificaciones.push(notificacion);
         console.log(`Notificación para ${this.nombre}: ${notificacion.mensaje}`);
     }
-}
 
-class Huesped extends Usuario {
-    constructor(nombre, email) {
-        super(nombre, email, TipoUsuario.HUESPED);
-    }
+    // En un futuo todo esto se va a hacer por medio de una API con interfaz gráfica y no por consola como ahora pero para probar :)
 
     reservarUnAlojamiento(alojamiento, cantHuespedes, rangoFechas) {
-        const reserva = new Reserva(new Date(), this, cantHuespedes, alojamiento, rangoFechas, EstadoReserva.PENDIENTE, alojamiento.precioPorNoche);
+        // Verifica tipo de usuario ya que no se puede usar una herencia para no cambiar el diagrama
+        if (this.tipo !== TipoUsuario.HUESPED) { throw new Error(`Solo un HUESPED puede reservar un alojamiento.`); }
+
+        const reserva = new Reserva(new Date(),this,cantHuespedes,alojamiento,rangoFechas,EstadoReserva.PENDIENTE,alojamiento.precioPorNoche);
+        alojamiento.agregarReserva(reserva);
         const notificacion = new FactoryNotificacion().crearSegunReserva(reserva);
-        notificacion.usuario.recibirNotificacion(notificacion); // Anfitrión recibe la noti
+        notificacion.enviarAlUsuario(alojamiento.anfitrion);
     }
 
     cancelarReserva(reserva, motivo) {
+        // Verifica tipo de usuario ya que no se puede usar una herencia para no cambiar el diagrama
+        if (this.tipo !== TipoUsuario.HUESPED) { throw new Error(`Solo un HUESPED puede cancelar una reserva.`); }
+
         reserva.actualizarEstado(EstadoReserva.CANCELADA);
         reserva.alojamiento.eliminarReserva(reserva);
         const notificacion = new FactoryNotificacion().crearNotificacionReservaCancelada(reserva, motivo);
-        notificacion.usuario.recibirNotificacion(notificacion); // Anfitrión recibe la noti
-    }
-}
-
-
-class Anfitrion extends Usuario {
-    constructor(nombre, email) {
-        super(nombre, email, TipoUsuario.ANFITRION);
+        notificacion.enviarAlUsuario(reserva.anfitrionDelLugar());
     }
 
     confirmarReserva(reserva) {
+        // Verifica tipo de usuario ya que no se puede usar una herencia para no cambiar el diagrama
+        if (this.tipo !== TipoUsuario.ANFITRION) {throw new Error(`Solo un ANFITRION puede confirmar una reserva.`); }
+
+        if (this.sePuedeReservar(reserva)){
         reserva.actualizarEstado(EstadoReserva.CONFIRMADA);
         reserva.alojamiento.agregarReserva(reserva);
         const notificacion = new FactoryNotificacion().crearNotificacionReservaConfirmada(reserva);
-        notificacion.usuario.recibirNotificacion(notificacion); // Huesped recibe la noti
+        notificacion.usuario.recibirNotificacion(notificacion);
+        } else {
+            throw new Error(`No se puede confirmar la reserva porque no es válida.`);
+        }
+    }
+
+    sePuedeReservar(reserva) {
+        // No le tengo que pasar el usuario porque ya lo tengo en la reserva
+        return reserva.estaDispobleElAlojamiento();
     }
 }
 
-
-//Mini test 
-const pais = new Pais("Argentina");
-const ciudad = new Ciudad("Mendoza", pais);
-const direccion = new Direccion("San Martín", 123, ciudad, -32.8908, -68.8272);
-
-const anfitrion = new Anfitrion("Carla Anfitriona", "carla@host.com");
-const huesped = new Huesped("Mario Huesped", "mario@viajero.com");
-
-const fotos = [new Foto("Vista a la montaña", "/img/montaña.jpg")];
-
-const alojamiento = new Alojamiento(
-    anfitrion,
-    "Refugio Andino",
-    "Pequeña cabaña entre montañas",
-    15000,
-    Moneda.PESO_ARG,
-    "13:00",
-    "11:00",
-    direccion,
-    3,
-    [Caracteristica.WIFI, Caracteristica.MASCOTAS_PERMITIDAS],
-    [],
-    fotos
-);
-
-const rangoFechas = new RangoFechas(new Date("2025-04-10"), new Date("2025-04-15"));
-huesped.reservarUnAlojamiento(alojamiento, 2, rangoFechas);
-
-
-const reserva = new Reserva(new Date(), huesped, 2, alojamiento, rangoFechas, EstadoReserva.PENDIENTE, alojamiento.precioPorNoche);
-
-
-anfitrion.confirmarReserva(reserva);
-
-
-huesped.cancelarReserva(reserva, "Me salió otro viaje");
+module.exports = {Usuario, Alojamiento, Direccion, Ciudad, Pais, RangoFechas, Reserva, TipoUsuario, Moneda, Caracteristica, EstadoReserva, Foto , CambioEstadoReserva, FactoryNotificacion, Notificacion};
